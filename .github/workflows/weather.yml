@@ -27,10 +27,9 @@ jobs:
           pip install -r apps/weather/requirements.txt
 
       - name: Update banner
-
         run: |
-          echo {{ $github.event_name }}
-          if [[ {{ $github.event_name }} == schedule ]]; then
+          echo ${{ $github.event_name }}
+          if [[ ${{ $github.event_name }} == schedule ]]; then
             server="--server={{ $github.secrets.discord_server }}"
           else
             server=""
