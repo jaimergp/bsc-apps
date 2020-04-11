@@ -24,16 +24,17 @@ import os
 from pathlib import Path
 import argparse
 from pprint import pprint
+import asyncio
 
 import requests
 import discord
-import asyncio
-
+import cairosvg
 
 HERE = Path(__file__).resolve().parent
 METAWEATHER = "https://www.metaweather.com/api/"
 CLIENT_ID = r"698589904808050708"
 BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
+WEATHER_BANNER = HERE / "data" / "weather.svg"
 
 WEATHER_TO_IMAGE = {
     "sn": "snow.png",
@@ -68,8 +69,7 @@ class DiscordClient(discord.Client):
             if self.dry_run:
                 print("   [dry-run]")
                 return
-            with open(self.banner, "rb") as f:
-                await guild.edit(banner=f.read())
+            await guild.edit(banner=self.img_bytes)
         finally:
             await self.logout()
 
@@ -90,14 +90,19 @@ def current_weather(location):
     data = r.json()
     print("MetaWeather replied with:")
     pprint(data)
-    return data["consolidated_weather"][0]["weather_state_abbr"]
+    return data["consolidated_weather"][0]
 
 
-def update_banner(server, image_path, dry_run=False):
+def update_banner(server, weather, dry_run=False):
     if not BOT_TOKEN:
         raise ValueError("Please provide your DISCORD_BOT_TOKEN env var!")
+    text = f"{weather['weather_state_name']}, {weather['the_temp']:.0f}°"
+    with open(WEATHER_BANNER) as f:
+        svg = f.read().replace("$TEMP$", text).encode("utf-8")
+    img_bytes = cairosvg.svg2png(bytestring=svg, write_to="weather.png", dpi=300)
+    return
 
-    client = DiscordClient(new_banner=image_path, guild_id=server, dry_run=dry_run)
+    client = DiscordClient(new_banner=img_bytes, guild_id=server, dry_run=dry_run)
     client.run(BOT_TOKEN)
 
 
@@ -121,8 +126,8 @@ def parse_cli():
 
 def main(server, location, default_banner=None, dry_run=False):
     weather = current_weather(location)
-    imgpath = HERE / "data" / WEATHER_TO_IMAGE.get(weather.lower(), default_banner)
-    update_banner(server, imgpath, dry_run=dry_run)
+    imgpath = HERE / "data" / WEATHER_TO_IMAGE.get(weather["weather_state_abbr"], default_banner)
+    update_banner(server, weather, dry_run=dry_run)
     return imgpath
 
 
