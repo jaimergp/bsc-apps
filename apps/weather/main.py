@@ -1,6 +1,10 @@
 """
 weather.py
 
+Authorize as:
+
+    https://discordapp.com/oauth2/authorize?client_id=698589904808050708&permission=32&scope=bot
+
 Weather      | Abbreviation
 -------------+--------------
 Snow         | sn
@@ -16,14 +20,20 @@ Clear        | c
 """
 
 import sys
+import os
 from pathlib import Path
 import argparse
 from pprint import pprint
 
 import requests
+import discord
+import asyncio
+
 
 HERE = Path(__file__).resolve().parent
 METAWEATHER = "https://www.metaweather.com/api/"
+CLIENT_ID = r"698589904808050708"
+BOT_TOKEN = os.environ["DISCORD_BOT_TOKEN"]
 
 WEATHER_TO_IMAGE = {
     "sn": "snow.png",
@@ -36,6 +46,32 @@ WEATHER_TO_IMAGE = {
     "lc": "sunny.png",
     "c": "sunny.png",
 }
+
+
+class DiscordClient(discord.Client):
+    def __init__(self, new_banner, guild_id, dry_run=False, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.banner = new_banner
+        self.dry_run = dry_run
+        self.guild_id = guild_id
+
+    async def on_ready(self):
+        try:
+            print("Logged on as", self.user)
+            guild = self.get_guild(self.guild_id)
+            if guild is None:
+                raise ValueError(f"We don't have access to guild {self.guild_id}")
+            if "BANNER" not in guild.features:
+                print("If only we had permissions...")
+                return
+            print("Uploading", self.banner, "to guild", guild.name)
+            if self.dry_run:
+                print("   [dry-run]")
+                return
+            with open(self.banner, "rb") as f:
+                await guild.edit(banner=f.read())
+        finally:
+            await self.logout()
 
 
 def find_location(query):
@@ -58,13 +94,27 @@ def current_weather(location):
 
 
 def update_banner(server, image_path, dry_run=False):
-    pass
+    if not BOT_TOKEN:
+        raise ValueError("Please provide your DISCORD_BOT_TOKEN env var!")
+
+    client = DiscordClient(new_banner=image_path, guild_id=server, dry_run=dry_run)
+    client.run(BOT_TOKEN)
 
 
 def parse_cli():
     p = argparse.ArgumentParser()
-    p.add_argument("location", type=str, help="Place to obtain weather information for.")
-    p.add_argument("--server", help="Discord server where you want to update the banner.")
+    p.add_argument(
+        "--location",
+        required=True,
+        type=str,
+        help="Place to obtain weather information for. It can be a text query or a WhereOnEarth ID.",
+    )
+    p.add_argument(
+        "--server",
+        required=True,
+        type=int,
+        help="Discord server ID (Server Settings> Widget) where you want to update the banner.",
+    )
     p.add_argument("--dry-run", action="store_true", help="If set, do not upload the banner.")
     return p.parse_args()
 

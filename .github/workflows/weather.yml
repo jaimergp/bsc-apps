@@ -14,7 +14,8 @@ jobs:
   banner:
     runs-on: ubuntu-18.04
     env:
-      DISCORD_ID: ${{ github.secrets.discord }}
+      DISCORD_SERVER_ID: ${{ github.secrets.discord_server }}
+      DISCORD_BOT_TOKEN: ${{ github.secrets.discord_bot_token }}
       LOCATION_OR_WOEID: 638242 # This is the city ID for Berlin, Germany
     steps:
       - uses: actions/checkout@v2
@@ -33,8 +34,8 @@ jobs:
         run: |
           echo ${{ github.event_name }}
           if [[ ${{ github.event_name }} == schedule ]]; then
-            dry_run=""
+            DRYRUN=""
           else
-            dry_run="--dry-run"
+            DRYRUN="--dry-run"
           fi
-          python apps/weather/main.py $dry_run --server=${SERVER_ID} ${LOCATION_OR_WOEID}
+          python apps/weather/main.py $DRYRUN --server=${DISCORD_SERVER_ID} --location=${LOCATION_OR_WOEID}
