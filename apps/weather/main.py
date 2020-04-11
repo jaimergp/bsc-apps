@@ -45,11 +45,11 @@ def find_location(query):
     return data[0]["woeid"]
 
 
-def current_weather(whereonearth):
-    if isinstance(whereonearth, str):  # this is a query, find the WhereOnEarth ID
-        whereonearth = find_location(whereonearth)
-    assert isinstance(whereonearth, int), "Location must be a WhereonEarth ID"
-    r = requests.get(f"{METAWEATHER}/location/{whereonearth}/")
+def current_weather(location):
+    # this is a query, find the WhereOnEarth ID
+    if isinstance(location, str) and not location.isnumeric():
+        location = find_location(location)
+    r = requests.get(f"{METAWEATHER}/location/{location}/")
     r.raise_for_status()
     data = r.json()
     print("MetaWeather replied with:")
@@ -57,22 +57,22 @@ def current_weather(whereonearth):
     return data["consolidated_weather"][0]["weather_state_abbr"]
 
 
-def update_banner(server, image_path):
+def update_banner(server, image_path, dry_run=False):
     pass
 
 
 def parse_cli():
     p = argparse.ArgumentParser()
-    p.add_argument("location", type=str, help="Place to obtain weather information for")
+    p.add_argument("location", type=str, help="Place to obtain weather information for.")
     p.add_argument("--server", help="Discord server where you want to update the banner.")
+    p.add_argument("--dry-run", action="store_true", help="If set, do not upload the banner.")
     return p.parse_args()
 
 
-def main(server, location, default_banner=None):
+def main(server, location, default_banner=None, dry_run=False):
     weather = current_weather(location)
     imgpath = HERE / "data" / WEATHER_TO_IMAGE.get(weather.lower(), default_banner)
-    if server:
-        update_banner(server, imgpath)
+    update_banner(server, imgpath, dry_run=dry_run)
     return imgpath
 
 
