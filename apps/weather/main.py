@@ -63,6 +63,7 @@ def parse_cli():
     p = argparse.ArgumentParser()
     p.add_argument("location", type=str, help="Place to obtain weather information for")
     p.add_argument("--server", help="Discord server where you want to update the banner.")
+    return p.parse_args()
 
 
 def main(server, location, default_banner=None):
