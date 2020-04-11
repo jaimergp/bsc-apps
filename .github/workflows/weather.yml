@@ -1,0 +1,38 @@
+name: Weather
+
+on:
+  push:
+    branches:
+      - "master"
+  pull_request:
+    branches:
+      - "master"
+  schedule: # run every 15 minutes
+    - cron: "*/15 * * * *"
+
+jobs:
+  banner:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: "3.7"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r apps/weather/requirements.txt
+
+      - name: Update banner
+
+        run: |
+          echo {{ $github.event_name }}
+          if [[ {{ $github.event_name }} == schedule ]]; then
+            server="--server={{ $github.secrets.discord_server }}"
+          else
+            server=""
+          fi
+          python apps/weather/main.py $server "Berlin"
