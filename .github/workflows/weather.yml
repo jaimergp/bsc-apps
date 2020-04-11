@@ -1,0 +1,41 @@
+name: Weather
+
+on:
+  push:
+    branches:
+      - "master"
+  pull_request:
+    branches:
+      - "master"
+  schedule: # run every 15 minutes
+    - cron: "*/15 * * * *"
+
+jobs:
+  banner:
+    runs-on: ubuntu-18.04
+    env:
+      DISCORD_SERVER_ID: ${{ secrets.DISCORD_SERVER_ID }}
+      DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+      LOCATION_OR_WOEID: 638242 # This is the city ID for Berlin, Germany
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: "3.7"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r apps/weather/requirements.txt
+
+      - name: Update banner
+        run: |
+          echo ${{ github.event_name }}
+          if [[ ${{ github.event_name }} == schedule ]]; then
+            DRYRUN=""
+          else
+            DRYRUN="--dry-run"
+          fi
+          python apps/weather/main.py $DRYRUN --server=${DISCORD_SERVER_ID} --location=${LOCATION_OR_WOEID}
