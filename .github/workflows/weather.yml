@@ -14,8 +14,8 @@ jobs:
   banner:
     runs-on: ubuntu-18.04
     env:
-      DISCORD_SERVER_ID: ${{ github.secrets.discord_server }}
-      DISCORD_BOT_TOKEN: ${{ github.secrets.discord_bot_token }}
+      DISCORD_SERVER_ID: ${{ secrets.DISCORD_SERVER_ID }}
+      DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
       LOCATION_OR_WOEID: 638242 # This is the city ID for Berlin, Germany
     steps:
       - uses: actions/checkout@v2
