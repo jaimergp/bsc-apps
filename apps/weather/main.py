@@ -18,6 +18,7 @@ Clear        | c
 import sys
 from pathlib import Path
 import argparse
+from pprint import pprint
 
 import requests
 
@@ -41,7 +42,7 @@ def find_location(query):
     r = requests.get(f"{METAWEATHER}/location/search/?query={query}")
     r.raise_for_status()
     data = r.json()
-    return data["woeid"]
+    return data[0]["woeid"]
 
 
 def current_weather(whereonearth):
@@ -51,7 +52,8 @@ def current_weather(whereonearth):
     r = requests.get(f"{METAWEATHER}/location/{whereonearth}/")
     r.raise_for_status()
     data = r.json()
-    print(data)
+    print("MetaWeather replied with:")
+    pprint(data)
     return data["consolidated_weather"][0]["weather_state_abbr"]
 
 
